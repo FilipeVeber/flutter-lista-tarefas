@@ -17,6 +17,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List _todoList = [];
+  final _textFieldController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +35,7 @@ class _HomeState extends State<Home> {
               children: <Widget>[
                 Expanded(
                   child: TextField(
+                    controller: _textFieldController,
                     decoration: InputDecoration(
                         labelText: "Nova tarefa",
                         labelStyle: TextStyle(color: Colors.blueAccent)),
@@ -43,9 +45,30 @@ class _HomeState extends State<Home> {
                   color: Colors.blueAccent,
                   child: Text("ADD"),
                   textColor: Colors.white,
-                  onPressed: () {},
+                  onPressed: _addToDo,
                 )
               ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.only(top: 10),
+              itemCount: _todoList.length,
+              itemBuilder: (context, index) {
+                final item = _todoList[index];
+                return CheckboxListTile(
+                  title: Text(item["title"]),
+                  value: item["ok"],
+                  secondary: CircleAvatar(
+                    child: Icon(item["ok"] ? Icons.check : Icons.error),
+                  ),
+                  onChanged: (bool checked) {
+                    setState(() {
+                      item["ok"] = checked;
+                    });
+                  },
+                );
+              },
             ),
           )
         ],
@@ -71,5 +94,16 @@ class _HomeState extends State<Home> {
     } catch (e) {
       return null;
     }
+  }
+
+  void _addToDo() {
+    Map<String, dynamic> newToDo = Map();
+    newToDo["title"] = _textFieldController.text;
+    _textFieldController.text = "";
+    newToDo["ok"] = false;
+
+    setState(() {
+      _todoList.add(newToDo);
+    });
   }
 }
