@@ -20,6 +20,17 @@ class _HomeState extends State<Home> {
   final _textFieldController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+
+    _readData().then((data) {
+      setState(() {
+        _todoList = json.decode(data);
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -54,24 +65,40 @@ class _HomeState extends State<Home> {
             child: ListView.builder(
               padding: EdgeInsets.only(top: 10),
               itemCount: _todoList.length,
-              itemBuilder: (context, index) {
-                final item = _todoList[index];
-                return CheckboxListTile(
-                  title: Text(item["title"]),
-                  value: item["ok"],
-                  secondary: CircleAvatar(
-                    child: Icon(item["ok"] ? Icons.check : Icons.error),
-                  ),
-                  onChanged: (bool checked) {
-                    setState(() {
-                      item["ok"] = checked;
-                    });
-                  },
-                );
-              },
+              itemBuilder: buildItem,
             ),
           )
         ],
+      ),
+    );
+  }
+
+  Widget buildItem(contex, index) {
+    final item = _todoList[index];
+    return Dismissible(
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
+      background: Container(
+          color: Colors.red,
+          child: Align(
+            alignment: Alignment(-0.9, 0),
+            child: Icon(
+              Icons.delete,
+              color: Colors.white,
+            ),
+          )),
+      direction: DismissDirection.startToEnd,
+      child: CheckboxListTile(
+        title: Text(item["title"]),
+        value: item["ok"],
+        secondary: CircleAvatar(
+          child: Icon(item["ok"] ? Icons.check : Icons.error),
+        ),
+        onChanged: (bool checked) {
+          setState(() {
+            item["ok"] = checked;
+            _saveData();
+          });
+        },
       ),
     );
   }
@@ -104,6 +131,7 @@ class _HomeState extends State<Home> {
 
     setState(() {
       _todoList.add(newToDo);
+      _saveData();
     });
   }
 }
