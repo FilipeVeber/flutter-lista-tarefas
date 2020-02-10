@@ -17,6 +17,9 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List _todoList = [];
+  Map<String, dynamic> _lastRemoved = Map();
+  int _lastRemovedIndex;
+
   final _textFieldController = TextEditingController();
 
   @override
@@ -62,10 +65,13 @@ class _HomeState extends State<Home> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.only(top: 10),
-              itemCount: _todoList.length,
-              itemBuilder: buildItem,
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView.builder(
+                padding: EdgeInsets.only(top: 10),
+                itemCount: _todoList.length,
+                itemBuilder: buildItem,
+              ),
             ),
           )
         ],
@@ -87,6 +93,29 @@ class _HomeState extends State<Home> {
             ),
           )),
       direction: DismissDirection.startToEnd,
+      onDismissed: (direction) {
+        _lastRemoved = Map.from(item);
+        _lastRemovedIndex = index;
+        _todoList.removeAt(index);
+
+        setState(() {
+          _saveData();
+        });
+
+        final snackBar = SnackBar(
+          content: Text("Tarefa ${item["title"]} removida"),
+          duration: Duration(seconds: 3),
+          action: SnackBarAction(
+            label: "Desfazer",
+            onPressed: () {
+              _restoreToDo(_lastRemoved, _lastRemovedIndex);
+            },
+          ),
+        );
+
+        Scaffold.of(contex).removeCurrentSnackBar();
+        Scaffold.of(contex).showSnackBar(snackBar);
+      },
       child: CheckboxListTile(
         title: Text(item["title"]),
         value: item["ok"],
@@ -133,5 +162,31 @@ class _HomeState extends State<Home> {
       _todoList.add(newToDo);
       _saveData();
     });
+  }
+
+  void _restoreToDo(Map<String, dynamic> lastRemoved, int index) {
+    setState(() {
+      _todoList.insert(_lastRemovedIndex, _lastRemoved);
+      _saveData();
+    });
+  }
+
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
+
+    setState(() {
+      _todoList.sort((a, b) {
+        if (a["ok"] && !b["ok"])
+          return 1;
+        else if (!a["ok"] && b["ok"])
+          return -1;
+        else
+          return 0;
+      });
+
+      _saveData();
+    });
+
+    return null;
   }
 }
